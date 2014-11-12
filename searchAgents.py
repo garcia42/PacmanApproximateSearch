@@ -432,26 +432,16 @@ class ApproximateSearchAgent(Agent):
     def registerInitialState(self, state):
         "This method is called before any moves are made."
         "*** YOUR CODE HERE ***"
-        self.searchType = FoodSearchProblem
-        width = state.getFood().width - 1
-        height = state.getFood().height - 1
-        self.k=30
+    
+        self.directions=[Directions.NORTH,Directions.EAST,Directions.SOUTH,Directions.WEST]
         self.actions=[]
-        self.kPoints = self.getKPoints(width, height, self.k, state)
-        self.clusters = {}
-        for k in self.kPoints:
-            self.clusters[k] = []
-        foodAndStart = state.getFood().asList()
-        foodAndStart.append(state.getPacmanPosition())
-        for loc in foodAndStart:
-            closestKPoint = (sys.maxint, sys.maxint)
-            closestDist = sys.maxint
-            for kPoint in self.kPoints:
-                currD = mazeDistance(kPoint, loc, state)
-                if (currD < closestDist):
-                    closestDist = currD
-                    closestKPoint = kPoint
-            self.clusters[closestKPoint].append(loc)
+
+        # self.count=0
+        # self.moves=[Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.NORTH,Directions.NORTH,Directions.WEST,Directions.WEST,
+        #             Directions.SOUTH,Directions.SOUTH,Directions.WEST,Directions.WEST,Directions.WEST,Directions.WEST,Directions.NORTH,Directions.EAST,Directions.EAST,Directions.EAST, Directions.NORTH,Directions.WEST,Directions.WEST,Directions.WEST,
+        #             Directions.NORTH,Directions.EAST,Directions.EAST,Directions.NORTH,Directions.NORTH,
+        #             Directions.WEST,Directions.WEST,Directions.NORTH,Directions.NORTH,Directions.EAST,Directions.EAST]
+
 
     def getAction(self, state):
         """
@@ -460,98 +450,55 @@ class ApproximateSearchAgent(Agent):
         Directions.{North, South, East, West, Stop}
         """
         "*** YOUR CODE HERE ***"
+        pX, pY = state.getPacmanPosition()
+        foodOneAway = []
+        for foodP in state.getFood().asList():
+            if (util.manhattanDistance == 1):
+                foodOneAway.append(foodP)
+        if (len(foodOneAway) != 0):
+            # prioritize directions
+            # N, E, S, W
+            directionFood = [(-1, -1), (-1, -1), (-1, -1), (-1, -1)]
+            fX, fY = -1, -1
+            for oneAwayP in foodOneAway:
+                fX, fY = oneAwayP[0], oneAwayP[1]
+                if (pX == fX and fY - pY == 1):
+                    directionFood[0] = oneAwayP
+                if (pX - fX == 1 and pY == fY):
+                    directionFood[1] = oneAwayP
+                if (pX == fX and pY == fY - 1):
+                    directionFood[2] = oneAwayP
+                if (pX - fX == -1 and pY == fY):
+                    directionFood[3] = oneAwayP
+            dPreferences = [1, 3, 0, 2]
+            for pref in dPreferences:
+                if (directionFood[pref] != (-1, -1)):
+                    return self.directions[pref]
 
-        if len(self.actions)==0 and len(self.visitedClusters)==self.k:
-            return Directions.STOP
-
-        #Check for the next visited set
-        if len(self.actions)==0 and len (self.visitedClusters)<self.k and len(self.visitedClusters) > 0 and not self.isT:
-            min_distance=sys.maxint
-            closest_cluster=None
-            print("visited clusters - " + str(self.visitedClusters))
-            for cluster in self.clusters:
-                if cluster not in self.visitedClusters:
-                    distance=mazeDistance(state.getPacmanPosition(),cluster,state)
-                    if distance<min_distance:
-                        min_distance=distance
-                        closest_cluster=cluster
-
-            print("start state = " + str(state.getPacmanPosition()) + " goal state = " + str(closest_cluster))
-            problem=PositionSearchProblem(state,start=state.getPacmanPosition(),goal=closest_cluster) 
-            self.actions=search.bfs(problem)
-            print(self.actions)
+        if len(self.actions)>0: 
             toReturn=self.actions[0]
             self.actions=self.actions[1:]
-            self.isT = True
-
             return toReturn
 
+        min_distance=sys.maxint
+        curr_pellet=state.getFood().asList()
+        best_path=[]
 
-        if len(self.actions)>0:
-            toReturn=self.actions[0]
-            self.actions=self.actions[1:]
-            return toReturn
+        for food in state.getFood().asList():
+            curr_path=mazePath(state.getPacmanPosition(),food,state)
+            curr_distance=len(curr_path)
+            if curr_distance<min_distance:
+                min_distance=curr_distance
+                curr_pellet=food
+                self.actions=curr_path
+                toReturn=self.actions[0]
+                self.actions=self.actions[1:]
+                return toReturn
 
-        self.isT = False
-        self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
-        micro = state.deepCopy()
-        pacP = state.getPacmanPosition()
-        currentCluster = (-1, -1)
-        for key, value in self.clusters.items():
-            if pacP in value:
-                currentCluster = key
-                self.visitedClusters.append(currentCluster)
+        # time=self.count
+        # self.count+=1
+        # return self.moves[time] 
 
-        # make food = cluster food
-        currentFoodList = self.clusters[currentCluster]
-        width = state.getFood().width
-        height=state.getFood().height
-        x, y = 0, 0
-        while x!=width-1 or y!=height-1:
-            if (x == width):
-                x = 0                
-                y += 1
-            if micro.data.food[x][y]==True and (x, y) not in currentFoodList:
-                micro.data.food[x][y] = False
-
-            x += 1
-                    # make problem of the copy state
-        problem = FoodSearchProblem(micro)
-        self.actions = self.searchFunction(problem)
-        state.pacmanPosition = problem.last
-        
-        closestDistance = sys.maxint
-        closestPoint = (-1, -1)
-        for kPoint in self.kPoints:
-            if kPoint not in self.visitedClusters:
-                curD = util.manhattanDistance(kPoint, state.pacmanPosition[0])
-                if (closestDistance > curD):
-                    closestDistance = curD
-                    closestPoint = kPoint
-
-        toReturn=self.actions[0]
-        self.actions=self.actions[1:]
-        print("to return " + str(toReturn))
-        return toReturn
-
-
-    def getKPoints(self, width, height, k, state):
-        foodList = state.getFood().asList()
-        kList = [random.choice(foodList)]
-        threshold = 5
-        while (k > 0):
-            closestK = sys.maxint
-            k -= 1
-            current = random.choice(foodList)
-            while closestK < threshold:
-                current = random.choice(foodList)
-                for point in kList:
-                    dist = util.manhattanDistance(point, current)
-                    closestK = min(dist, closestK)
-            kList.append(current)
-        return kList
-
-    
 
 def mazeDistance(point1, point2, gameState):
     """
@@ -570,3 +517,20 @@ def mazeDistance(point1, point2, gameState):
     assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
     prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False)
     return len(search.bfs(prob))
+def mazePath(point1, point2, gameState):
+    """
+    Returns the maze distance between any two points, using the search functions
+    you have already built.  The gameState can be any game state -- Pacman's position
+    in that state is ignored.
+
+    Example usage: mazeDistance( (2,4), (5,6), gameState)
+
+    This might be a useful helper function for your ApproximateSearchAgent.
+    """
+    x1, y1 = point1
+    x2, y2 = point2
+    walls = gameState.getWalls()
+    assert not walls[x1][y1], 'point1 is a wall: ' + point1
+    assert not walls[x2][y2], 'point2 is a wall: ' + str(point2)
+    prob = PositionSearchProblem(gameState, start=point1, goal=point2, warn=False)
+    return search.bfs(prob)
