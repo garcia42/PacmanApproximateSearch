@@ -426,6 +426,7 @@ class ApproximateSearchAgent(Agent):
 
     visitedClusters = []
     totalActions = []
+    isT = False
 
 
     def registerInitialState(self, state):
@@ -464,9 +465,10 @@ class ApproximateSearchAgent(Agent):
             return Directions.STOP
 
         #Check for the next visited set
-        if len(self.actions)==0 and len (self.visitedClusters)<self.k:
+        if len(self.actions)==0 and len (self.visitedClusters)<self.k and len(self.visitedClusters) > 0 and not self.isT:
             min_distance=sys.maxint
             closest_cluster=None
+            print("visited clusters - " + str(self.visitedClusters))
             for cluster in self.clusters:
                 if cluster not in self.visitedClusters:
                     distance=mazeDistance(state.getPacmanPosition(),cluster,state)
@@ -474,12 +476,14 @@ class ApproximateSearchAgent(Agent):
                         min_distance=distance
                         closest_cluster=cluster
 
-            #Get to the next cluster 
-            problem=PositionSearchProblem(state,state.getPacmanPosition(),closest_cluster) 
+            print("start state = " + str(state.getPacmanPosition()) + " goal state = " + str(closest_cluster))
+            problem=PositionSearchProblem(state,start=state.getPacmanPosition(),goal=closest_cluster) 
             self.actions=search.bfs(problem)
-
+            print(self.actions)
             toReturn=self.actions[0]
             self.actions=self.actions[1:]
+            self.isT = True
+
             return toReturn
 
 
@@ -488,8 +492,7 @@ class ApproximateSearchAgent(Agent):
             self.actions=self.actions[1:]
             return toReturn
 
-
-
+        self.isT = False
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         micro = state.deepCopy()
         pacP = state.getPacmanPosition()
@@ -512,12 +515,9 @@ class ApproximateSearchAgent(Agent):
                 micro.data.food[x][y] = False
 
             x += 1
-        print(micro.data)
                     # make problem of the copy state
         problem = FoodSearchProblem(micro)
         self.actions = self.searchFunction(problem)
-        print(self.actions)
-        print(problem.last)
         state.pacmanPosition = problem.last
         
         closestDistance = sys.maxint
@@ -531,6 +531,7 @@ class ApproximateSearchAgent(Agent):
 
         toReturn=self.actions[0]
         self.actions=self.actions[1:]
+        print("to return " + str(toReturn))
         return toReturn
 
 
