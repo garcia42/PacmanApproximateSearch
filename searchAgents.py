@@ -434,7 +434,9 @@ class ApproximateSearchAgent(Agent):
         self.searchType = FoodSearchProblem
         width = state.getFood().width - 1
         height = state.getFood().height - 1
-        self.kPoints = self.getKPoints(width, height, 30, state)
+        self.k=30
+        self.actions=[]
+        self.kPoints = self.getKPoints(width, height, self.k, state)
         self.clusters = {}
         for k in self.kPoints:
             self.clusters[k] = []
@@ -457,6 +459,36 @@ class ApproximateSearchAgent(Agent):
         Directions.{North, South, East, West, Stop}
         """
         "*** YOUR CODE HERE ***"
+
+        if len(self.actions)==0 and len(self.visitedClusters)==self.k:
+            return Directions.STOP
+
+        #Check for the next visited set
+        if len(self.actions)==0 and len (self.visitedClusters)<self.k:
+            min_distance=sys.maxint
+            closest_cluster=None
+            for cluster in self.clusters:
+                if cluster not in self.visitedClusters:
+                    distance=mazeDistance(state.getPacmanPosition(),cluster,state)
+                    if distance<min_distance:
+                        min_distance=distance
+                        closest_cluster=cluster
+
+            #Get to the next cluster 
+            problem=PositionSearchProblem(state,state.getPacmanPosition(),closest_cluster) 
+            self.actions=search.bfs(problem)
+
+            toReturn=self.actions[0]
+            self.actions=self.actions[1:]
+            return toReturn
+
+
+        if len(self.actions)>0:
+            toReturn=self.actions[0]
+            self.actions=self.actions[1:]
+            return toReturn
+
+
 
         self.searchFunction = lambda prob: search.aStarSearch(prob, foodHeuristic)
         micro = state.deepCopy()
@@ -492,12 +524,14 @@ class ApproximateSearchAgent(Agent):
         closestPoint = (-1, -1)
         for kPoint in self.kPoints:
             if kPoint not in self.visitedClusters:
-                curD = util.manhattanDistance(kPoint, state.pacmanPosition)
+                curD = util.manhattanDistance(kPoint, state.pacmanPosition[0])
                 if (closestDistance > curD):
                     closestDistance = curD
                     closestPoint = kPoint
 
-        self.totalActions += self.actions
+        toReturn=self.actions[0]
+        self.actions=self.actions[1:]
+        return toReturn
 
 
     def getKPoints(self, width, height, k, state):
