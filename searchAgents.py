@@ -461,15 +461,12 @@ class ApproximateSearchAgent(Agent):
         for foodP in state.getFood().asList():
             if (util.manhattanDistance(state.getPacmanPosition(), foodP) == 1):
                 foodOneAway.append(foodP)
-        print(len(foodOneAway))
         if (len(foodOneAway) != 0):
             # prioritize directions
             # N, E, S, W
             directionFood = [(-1, -1), (-1, -1), (-1, -1), (-1, -1)]
             for oneAwayP in foodOneAway:
                 fX, fY = oneAwayP[0], oneAwayP[1]
-                print("pacmanPosition = " + str(state.getPacmanPosition()))
-                print("food position = " + str(oneAwayP))
                 if (pX == fX and fY - pY == 1):
                     directionFood[0] = oneAwayP
                 if (fX - pX == 1 and pY == fY):
@@ -478,16 +475,13 @@ class ApproximateSearchAgent(Agent):
                     directionFood[2] = oneAwayP
                 if (pX - fX == 1 and pY == fY):
                     directionFood[3] = oneAwayP
-            dPreferences = [1, 3, 0, 2]
-            print(directionFood)
+            dPreferences = [2, 3, 0, 1]
             for pref in dPreferences:
                 if (directionFood[pref] != (-1, -1)):
-                    print(self.directions[pref])
                     return self.directions[pref]
 
         min_distance=sys.maxint
         curr_pellet=state.getFood().asList()
-        best_path=[]
 
         for food in state.getFood().asList():
             curr_path=mazePath(state.getPacmanPosition(),food,state)
@@ -496,9 +490,10 @@ class ApproximateSearchAgent(Agent):
                 min_distance=curr_distance
                 curr_pellet=food
                 self.actions=curr_path
-                toReturn=self.actions[0]
-                self.actions=self.actions[1:]
-                return toReturn
+
+        toReturn=self.actions[0]
+        self.actions=self.actions[1:]
+        return toReturn
 
         # time=self.count
         # self.count+=1
