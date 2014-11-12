@@ -200,7 +200,7 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     while len(frontier) != 0:
         currState = min(frontier, key=fScore)
         if problem.isGoalState(currState):
-            self.last = currState
+            problem.last = currState
             return getActions(previous, currState)
         frontier.remove(currState)
         explored.add(currState)

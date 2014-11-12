@@ -434,15 +434,17 @@ class ApproximateSearchAgent(Agent):
         self.searchType = FoodSearchProblem
         width = state.getFood().width - 1
         height = state.getFood().height - 1
-        self.kPoints = self.getKPoints(width, height, 12, state)
+        self.kPoints = self.getKPoints(width, height, 30, state)
         self.clusters = {}
         for k in self.kPoints:
             self.clusters[k] = []
-        for loc in state.getFood().asList():
+        foodAndStart = state.getFood().asList()
+        foodAndStart.append(state.getPacmanPosition())
+        for loc in foodAndStart:
             closestKPoint = (sys.maxint, sys.maxint)
             closestDist = sys.maxint
             for kPoint in self.kPoints:
-                currD = util.manhattanDistance(kPoint, loc)
+                currD = mazeDistance(kPoint, loc, state)
                 if (currD < closestDist):
                     closestDist = currD
                     closestKPoint = kPoint
@@ -470,7 +472,6 @@ class ApproximateSearchAgent(Agent):
         width = state.getFood().width
         height=state.getFood().height
         x, y = 0, 0
-        print(currentFoodList)
         while x!=width-1 or y!=height-1:
             if (x == width):
                 x = 0                
@@ -481,15 +482,17 @@ class ApproximateSearchAgent(Agent):
             x += 1
         print(micro.data)
                     # make problem of the copy state
-        problem = FoodSearchProblem(state)
+        problem = FoodSearchProblem(micro)
         self.actions = self.searchFunction(problem)
+        print(self.actions)
+        print(problem.last)
+        state.pacmanPosition = problem.last
         
-        pacEnd = self.last
         closestDistance = sys.maxint
         closestPoint = (-1, -1)
         for kPoint in self.kPoints:
             if kPoint not in self.visitedClusters:
-                curD = util.manhattanDistance(kPoint, pacEnd)
+                curD = util.manhattanDistance(kPoint, state.pacmanPosition)
                 if (closestDistance > curD):
                     closestDistance = curD
                     closestPoint = kPoint
