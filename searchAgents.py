@@ -450,7 +450,8 @@ class ApproximateSearchAgent(Agent):
         Directions.{North, South, East, West, Stop}
         """
         "*** YOUR CODE HERE ***"
-        if len(self.actions)>0: 
+        if len(self.actions)>0:
+            # grab lonely close pellets
             toReturn=self.actions[0]
             self.actions=self.actions[1:]
             return toReturn
@@ -462,6 +463,25 @@ class ApproximateSearchAgent(Agent):
             if (util.manhattanDistance(state.getPacmanPosition(), foodP) == 1):
                 foodOneAway.append(foodP)
         if (len(foodOneAway) != 0):
+
+            children = self.getChildren(state.getPacmanPosition(), state)
+            for childLoc in children:
+                if (len(self.getChildren(childLoc, state)) == 0):
+                    action = None
+                    fX, fY = childLoc
+                    pX, pY = state.getPacmanPosition()
+                    if (pX == fX and fY - pY == 1):
+                        action = Directions.NORTH
+                    if (fX - pX == 1 and pY == fY):
+                        action = Directions.EAST
+                    if (pX == fX and pY - 1 == fY):
+                        action = Directions.SOUTH
+                    if (pX - fX == 1 and pY == fY):
+                        action = Directions.WEST
+                    self.actions = []
+                    return action
+
+
             # prioritize directions
             # N, E, S, W
             directionFood = [(-1, -1), (-1, -1), (-1, -1), (-1, -1)]
@@ -475,7 +495,8 @@ class ApproximateSearchAgent(Agent):
                     directionFood[2] = oneAwayP
                 if (pX - fX == 1 and pY == fY):
                     directionFood[3] = oneAwayP
-            dPreferences = [2, 3, 0, 1]
+            # dPreferences = [2, 3, 0, 1] 317
+            dPreferences = [3, 0, 1, 2] # 317
             for pref in dPreferences:
                 if (directionFood[pref] != (-1, -1)):
                     return self.directions[pref]
@@ -495,10 +516,21 @@ class ApproximateSearchAgent(Agent):
         self.actions=self.actions[1:]
         return toReturn
 
-        # time=self.count
-        # self.count+=1
-        # return self.moves[time] 
+    def getChildren(self, location, state):
+        pX, pY = location
+        east = (pX + 1, pY)
+        west = (pX - 1, pY)
+        north = (pX, pY + 1)
+        south = (pX, pY - 1)
+        possibleP = [east, west, north, south]
+        children = []
+        for p in possibleP:
+            if p in state.getFood().asList():
+                children.append(p)
+        return children
 
+
+# if there's a time when running bfs that a neighbor pellet has no neighbors then grab it.
 
 def mazeDistance(point1, point2, gameState):
     """
